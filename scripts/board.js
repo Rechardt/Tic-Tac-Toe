@@ -66,7 +66,7 @@ function playerHasWon() {
     for (const condition of winningCombos) {
         let [a, b, c] = condition
 
-        if(spaces[a] && (spaces[a] == spaces[b] && spaces[a] == spaces[c])) {
+        if(spaces[a] !== null && (spaces[a] == spaces[b] && spaces[a] == spaces[c])) {
             console.log("winning spaces are: " + condition)
             return [a,b,c]
         }
