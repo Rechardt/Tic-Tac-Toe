@@ -3,6 +3,16 @@ let playerText = document.getElementById('playerText')
 let turnText = document.getElementById('turnText')
 const restartButton = document.getElementById('restart')
 
+let singlePlayer = false;
+
+function checkGameType() {
+    const urlParams = new URLSearchParams(window.location.search)
+    let gameType = parseInt(urlParams.get('value'))
+    console.log(gameType)
+    if (gameType === 1) {
+        singlePlayer = true;
+    }
+}
 
 const players = ['O', 'X']
 const MAX_MOVES = 9
@@ -26,26 +36,73 @@ function cellClicked(cell) {
     let winningCells = playerHasWon()
     if (winningCells !== false) {
         // game over someone has won
-        turnText.style.color = "white"
-        playerText.innerText = players[currentPlayer] + " WINS"
-
-        for(const space of winningCells) {
-            console.log(space + ". making " + cells[space] + " green")
-            cells[space].style.color = "green"
-        }
-
-        cells.forEach(cell => cell.removeEventListener('click', cellClicked))
-        return;
+        finishGame(winningCells);
+        return
+    } else if (moveCount === 8) {
+        draw()
+        return
     }
 
     turnText.innerText = players[1-currentPlayer] + '\'s TURN'
 
-    // swap who plays next
-    currentPlayer = 1-currentPlayer
-
-
     moveCount++
 
+    // swap who plays next
+    currentPlayer = 1-currentPlayer
+    if (singlePlayer && currentPlayer !== 1) {
+        setTimeout(cpuTurn(), 1500) // slight delay for better UX
+    }
+}
+
+function finishGame(winningCells) {
+    turnText.style.color = "white"
+    playerText.innerText = players[currentPlayer] + " WINS"
+
+    for(const space of winningCells) {
+        cells[space].style.color = "green"
+    }
+
+    cells.forEach(cell => cell.removeEventListener('click', cellClicked))
+}
+
+function draw() {
+    turnText.style.color = "white"
+    playerText.innerText = "DRAW"
+
+    cells.forEach(cell => cell.removeEventListener('click', cellClicked))
+}
+
+function cpuTurn() {
+    // Get all indices where the value is null
+    const emptyIndices = spaces
+                        .map((value, index) => (value === null ? index : -1))
+                        .filter(index => index !== -1);
+
+    // If there are no empty spaces, return null
+    if (emptyIndices.length === 0) {
+        return null;
+    }
+
+    // Pick a random index from the emptyIndices array
+    const randomIndex = Math.floor(Math.random() * emptyIndices.length);
+    const cellId = emptyIndices[randomIndex];
+
+    // Set the selected cell to the CPU player
+    spaces[cellId] = currentPlayer;
+    cells[cellId].innerText = players[currentPlayer];
+
+    let winningCells = playerHasWon();
+    if (winningCells !== false) {
+        // game over someone has won
+        finishGame(winningCells);
+        return;
+    }
+
+    moveCount++;
+
+    // Swap who plays next
+    currentPlayer = 1 - currentPlayer;
+    turnText.innerText = players[currentPlayer] + '\'s TURN';
 }
 
 const winningCombos = [
@@ -74,10 +131,6 @@ function playerHasWon() {
     return false
 }
 
-cells.forEach(cell => cell.addEventListener('click', cellClicked))
-
-restartButton.addEventListener('click', restart)
-
 function restart() {
     spaces.fill(null)
     moveCount = 0;
@@ -96,3 +149,10 @@ function restart() {
 
     cells.forEach(cell => cell.addEventListener('click', cellClicked))
 }
+
+// MAIN
+checkGameType()
+
+cells.forEach(cell => cell.addEventListener('click', cellClicked))
+
+restartButton.addEventListener('click', restart)
